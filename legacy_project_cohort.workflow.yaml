@@ -1,0 +1,25 @@
+name: Add Samples to Cohort Variant Frequencies
+description: |-
+  # Add sample to a legacy VSW1 cohort VarSeq project
+  
+  This workflow adds new samples to an existing legacy VarSeq cohort project.
+  It updates the project with additional variant frequency data by integrating
+  new files into the established cohort structure.
+
+stages:
+  - name: update_project
+    description: Update the legacy cohort project with new samples
+    task_path: update_project.task.yaml
+    parameter_file:
+      path: 
+        base_path: 
+          type: directory
+          value: ""
+        file: ""
+
+    task_parameters:
+      - name: files_to_add
+        type: directory
+        label: The input directory of the new files to add
+        help: The directory containing the files to be added to the cohort
+

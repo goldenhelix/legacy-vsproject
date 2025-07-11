@@ -1,0 +1,110 @@
+name: Add Samples to Cohort Variant Frequencies
+description: |-
+  # Add Samples to Cohort Variant Frequencies
+  
+  This task updates an existing VarSeq cohort project by adding new sample files.
+  It automatically finds the most recent project version, creates a new timestamped
+  project, imports the new files, downloads required sources, and executes saved
+  exports. If no existing project is found, it creates a new one from the template.
+
+agent_requirements:
+  cpu_cores: 8
+  memory_gb: 16
+
+parameters:
+  - name: project_base_path
+    type: string
+    label: The Project Base Path
+    help: The base path where the project will be created and stored
+
+  - name: project_name
+    type: string
+    label: The Project Base Name 
+    help: The base name for the new project. The final project name will include a timestamp to ensure uniqueness.
+
+  - name: files_to_add
+    type: directory
+    label: The input directory of the new files to add
+    help: The directory containing the files to be added to the cohort
+
+  - name: project_template
+    type: file
+    label: The project template for new projects 
+    help: The path to the project template file that will be used for new projects
+
+
+steps:
+  - name: create_cohort
+    description: Create the initial cohort
+    type: cmd
+    command: bash
+    args:
+      - |-
+        #!/usr/bin/env bash
+        set -e
+
+        vspipeline="/opt/VarSeq/vspipeline"
+
+        # Find the latest version of the project 
+        echo "Searching for the latest project version in $project_base_path"
+
+        # Find all unique folders containing .vsproject files, sorted by creation date
+        newest_project=$(find "$project_base_path" -name "*.vsproject" -type f -printf '%h\n' | \
+                        sort -u | \
+                        while read dir; do 
+                            # Use birth time if available, otherwise fall back to modification time
+                            birth_time=$(stat -c %W "$dir" 2>/dev/null)
+                            if [[ "$birth_time" == "0" ]]; then
+                                # Birth time not available, use modification time
+                                echo "$(stat -c %Y "$dir") $dir"
+                            else
+                                echo "$birth_time $dir"
+                            fi
+                        done | \
+                        sort -nr | \
+                        head -1 | \
+                        cut -d' ' -f2-)
+
+        new_project="${project_base_path}/${project_name}-$(date +%Y%m%d%H%M%S)"
+
+        # Check if we found any results
+        if [[ -z "$newest_project" ]]; then
+            echo "No folders containing .vsproject files found"
+            echo "A new project will be created"
+
+            if [[ ! -f "${project_template}" ]]; then
+              echo "Project template file not found: $project_template"             
+              exit 1
+            fi
+
+            vspipeline -c get_version \
+              -c project_create "${new_project}"  "${project_template}"  \
+              -c import "${files_to_add}" \
+              -c download_required_sources \
+              -c task_wait continue_on_error=True \
+              -c run_saved_exports \
+              -c get_task_list \
+              -c project_save \
+   
+        else
+          echo "Newest folder: $newest_project"
+
+          vspipeline -c get_version \
+            -c project_open "${newest_project}" \
+            -c import "${files_to_add}" "${new_project}" \
+            -c download_required_sources \
+            -c task_wait continue_on_error=True \
+            -c run_saved_exports \
+            -c get_task_list \
+            -c project_save
+
+        fi
+
+
+
+
+
+
+
+
+

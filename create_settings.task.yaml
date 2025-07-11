@@ -1,0 +1,47 @@
+name: Create Cohort
+description: |-
+  # Create Initial Cohort Settings
+  
+  This task creates the initial settings for a VarSeq cohort project. It sets up
+  the project directory structure and generates a parameter file containing the
+  project configuration details including the base path, name, and template.
+  
+
+agent_requirements:
+  cpu_cores: 0.1
+  memory_gb: 0.1 
+
+parameters:
+  - name: project_name
+    type: string
+    label: Cohort Name
+    help: The name of the cohort to create
+
+  - name: project_template
+    type: file
+    label: The project template for new projects 
+    help: The path to the project template file that will be used for new projects
+
+  - name: project_base_path
+    type: string
+    label: The Project Base Path
+    help: The base path where the project will be created and stored
+
+
+steps:
+  - name: create_cohort
+    description: Create the initial cohort
+    type: cmd
+    command: bash
+    args:
+      - |-
+        #!/usr/bin/env bash
+        set -ex
+
+        mkdir -p "${WORKSPACE_DIR}/${project_base_path}"
+        out_parameter_file="${WORKSPACE_DIR}/${project_base_path}/project_params.txt"
+
+        echo "project_base_path=${project_base_path}" > "${out_parameter_file}"
+        echo "project_name=${project_name}" >> "${out_parameter_file}"
+        echo "project_template=${project_template}" >> "${out_parameter_file}"
+
