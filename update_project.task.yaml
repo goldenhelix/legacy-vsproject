@@ -1,6 +1,7 @@
-name: Add Samples to Cohort Variant Frequencies
+name: Add Samples to VarSeq Cohort 
+auto_generate_session_for_account: "{workspaceBot}"
 description: |-
-  # Add Samples to Cohort Variant Frequencies
+  # Add Samples to Variant Cohort 
   
   This task updates an existing VarSeq cohort project by adding new sample files.
   It automatically finds the most recent project version, creates a new timestamped
@@ -37,19 +38,19 @@ steps:
   - name: create_cohort
     description: Create the initial cohort
     type: cmd
-    command: bash
+    docker:
+      image: ${VSPIPELINE_DOCKER_IMAGE}
     args:
       - |-
         #!/usr/bin/env bash
-        set -e
+        set -xe
 
-        vspipeline="/opt/VarSeq/vspipeline"
 
         # Find the latest version of the project 
         echo "Searching for the latest project version in $project_base_path"
 
         # Find all unique folders containing .vsproject files, sorted by creation date
-        newest_project=$(find "$project_base_path" -name "*.vsproject" -type f -printf '%h\n' | \
+        newest_project=$(find "${WORKSPACE_DIR}${project_base_path}" -name "*.vsproject" -type f -printf '%h\n' | \
                         sort -u | \
                         while read dir; do 
                             # Use birth time if available, otherwise fall back to modification time
@@ -65,7 +66,7 @@ steps:
                         head -1 | \
                         cut -d' ' -f2-)
 
-        new_project="${project_base_path}/${project_name}-$(date +%Y%m%d%H%M%S)"
+        new_project="${WORKSPACE_DIR}${project_base_path}/${project_name}-$(date +%Y%m%d%H%M%S)"
 
         # Check if we found any results
         if [[ -z "$newest_project" ]]; then
@@ -77,7 +78,8 @@ steps:
               exit 1
             fi
 
-            vspipeline -c get_version \
+            /opt/vspipeline/vspipeline -c get_version \
+              -c get_license_info \
               -c project_create "${new_project}"  "${project_template}"  \
               -c import "${files_to_add}" \
               -c download_required_sources \
@@ -89,7 +91,8 @@ steps:
         else
           echo "Newest folder: $newest_project"
 
-          vspipeline -c get_version \
+          /opt/vspipeline/vspipeline -c get_version \
+            -c get_license_info \
             -c project_open "${newest_project}" \
             -c import "${files_to_add}" "${new_project}" \
             -c download_required_sources \

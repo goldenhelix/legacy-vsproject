@@ -1,6 +1,6 @@
-name: Create Cohort
+name: Create VSProject Workflow Settings
 description: |-
-  # Create Initial Cohort Settings
+  # Create Initial VSProject Cohort Settings
   
   This task creates the initial settings for a VarSeq cohort project. It sets up
   the project directory structure and generates a parameter file containing the
@@ -23,7 +23,7 @@ parameters:
     help: The path to the project template file that will be used for new projects
 
   - name: project_base_path
-    type: string
+    type: directory
     label: The Project Base Path
     help: The base path where the project will be created and stored
 
@@ -38,10 +38,10 @@ steps:
         #!/usr/bin/env bash
         set -ex
 
-        mkdir -p "${WORKSPACE_DIR}/${project_base_path}"
-        out_parameter_file="${WORKSPACE_DIR}/${project_base_path}/project_params.txt"
+        mkdir -p "${project_base_path}"
+        out_parameter_file="${project_base_path}/project_params.txt"
 
-        echo "project_base_path=${project_base_path}" > "${out_parameter_file}"
+        echo "project_base_path=${project_base_path#${WORKSPACE_DIR}}" > "${out_parameter_file}"
         echo "project_name=${project_name}" >> "${out_parameter_file}"
-        echo "project_template=${project_template}" >> "${out_parameter_file}"
+        echo "project_template=${project_template#${WORKSPACE_DIR}}" >> "${out_parameter_file}"
 
