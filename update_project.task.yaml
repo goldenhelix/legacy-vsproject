@@ -49,6 +49,14 @@ steps:
         # Find the latest version of the project 
         echo "Searching for the latest project version in $project_base_path"
 
+        export GOLDENHELIX_USERDATA="${WORKSPACE_DIR}/AppData"
+        export GH_CRASH_DUMP_DIR="${WORKSPACE_DIR}/${project_base_path}/gh_crash_dump"
+        mkdir -p "${GH_CRASH_DUMP_DIR}"
+
+        if [ -d "/scratch" ]; then
+          export GH_TEMPDIR="/scratch"
+        fi
+
         # Find all unique folders containing .vsproject files, sorted by creation date
         newest_project=$(find "${WORKSPACE_DIR}${project_base_path}" -name "*.vsproject" -type f -printf '%h\n' | \
                         sort -u | \
@@ -69,6 +77,7 @@ steps:
         new_project="${WORKSPACE_DIR}${project_base_path}/${project_name}-$(date +%Y%m%d%H%M%S)"
 
         # Check if we found any results
+        echo "Newest project found: $newest_project"
         if [[ -z "$newest_project" ]]; then
             echo "No folders containing .vsproject files found"
             echo "A new project will be created"
@@ -78,31 +87,38 @@ steps:
               exit 1
             fi
 
-            /opt/vspipeline/vspipeline.bin -c get_version \
-              -c get_license_info \
-              -c project_create "${new_project}"  "${project_template}"  \
-              -c import "${files_to_add}" \
-              -c download_required_sources \
-              -c task_wait continue_on_error=True \
-              -c run_saved_exports \
-              -c get_task_list \
-              -c project_save \
-   
+        cat <<EOF > run_batch.vs-batch
+          get_version
+          get_license_info
+          project_create "${new_project}"  "${project_template}"  
+          import "${files_to_add}" 
+          download_required_sources 
+          task_wait continue_on_error=True 
+          run_saved_exports 
+          get_task_list 
+          project_save 
+          project_close
+        EOF
+
         else
           echo "Newest folder: $newest_project"
 
-          /opt/vspipeline/vspipeline.bin -c get_version \
-            -c get_license_info \
-            -c project_open "${newest_project}" \
-            -c import "${files_to_add}" "${new_project}" \
-            -c download_required_sources \
-            -c task_wait continue_on_error=True \
-            -c run_saved_exports \
-            -c get_task_list \
-            -c project_save
+        cat <<EOF > run_batch.vs-batch
+          get_version
+          get_license_info
+          project_open "${newest_project}" 
+          import "${files_to_add}" "${new_project}" 
+          download_required_sources 
+          task_wait continue_on_error=True 
+          run_saved_exports 
+          get_task_list 
+          project_save
+          project_close
+        EOF
 
         fi
 
+        /opt/vspipeline/vspipeline.bin -c batch file=run_batch.vs-batch
 
 
 
