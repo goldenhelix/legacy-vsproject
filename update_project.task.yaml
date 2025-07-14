@@ -78,7 +78,7 @@ steps:
               exit 1
             fi
 
-            /opt/vspipeline/vspipeline -c get_version \
+            /opt/vspipeline/vspipeline.bin -c get_version \
               -c get_license_info \
               -c project_create "${new_project}"  "${project_template}"  \
               -c import "${files_to_add}" \
@@ -91,7 +91,7 @@ steps:
         else
           echo "Newest folder: $newest_project"
 
-          /opt/vspipeline/vspipeline -c get_version \
+          /opt/vspipeline/vspipeline.bin -c get_version \
             -c get_license_info \
             -c project_open "${newest_project}" \
             -c import "${files_to_add}" "${new_project}" \
