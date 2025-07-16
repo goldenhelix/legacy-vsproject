@@ -14,7 +14,7 @@ agent_requirements:
 
 parameters:
   - name: project_base_path
-    type: string
+    type: directory
     label: The Project Base Path
     help: The base path where the project will be created and stored
 
@@ -50,31 +50,41 @@ steps:
         echo "Searching for the latest project version in $project_base_path"
 
         export GOLDENHELIX_USERDATA="${WORKSPACE_DIR}/AppData"
-        export GH_CRASH_DUMP_DIR="${WORKSPACE_DIR}/${project_base_path}/gh_crash_dump"
+        export GH_CRASH_DUMP_DIR="${project_base_path}/gh_crash_dump"
         mkdir -p "${GH_CRASH_DUMP_DIR}"
 
         if [ -d "/scratch" ]; then
           export GH_TEMPDIR="/scratch"
         fi
 
-        # Find all unique folders containing .vsproject files, sorted by creation date
-        newest_project=$(find "${WORKSPACE_DIR}${project_base_path}" -name "*.vsproject" -type f -printf '%h\n' | \
+        # Find all unique folders containing .vsproject files, sorted by number after last '-'
+        newest_project=$(find "${project_base_path}" -name "*.vsproject" -type f -printf '%h\n' | \
                         sort -u | \
                         while read dir; do 
-                            # Use birth time if available, otherwise fall back to modification time
-                            birth_time=$(stat -c %W "$dir" 2>/dev/null)
-                            if [[ "$birth_time" == "0" ]]; then
-                                # Birth time not available, use modification time
-                                echo "$(stat -c %Y "$dir") $dir"
+                            # Extract the number after the last '-' from the directory name
+                            dir_name=$(basename "$dir")
+                            if [[ "$dir_name" == *-* ]]; then
+                                number_part=${dir_name##*-}
+                                # Pad with zeros for lexicographic sorting (assumes max 4 digits)
+                                printf "%04d %s\n" "$number_part" "$dir"
                             else
-                                echo "$birth_time $dir"
+                                # If no '-' found, use 0 as the number
+                                printf "%04d %s\n" "0" "$dir"
                             fi
                         done | \
                         sort -nr | \
                         head -1 | \
                         cut -d' ' -f2-)
 
-        new_project="${WORKSPACE_DIR}${project_base_path}/${project_name}-$(date +%Y%m%d%H%M%S)"
+        project_count=1
+        if [[ -z "$newest_project" ]]; then
+            echo "No existing projects found!"
+        else
+            project_count=$(echo "$newest_project" | rev | cut -d'-' -f1 | rev)
+            project_count=$((project_count + 1))
+        fi
+        
+        new_project="${project_base_path}/${project_name}-${project_count}"
 
         # Check if we found any results
         echo "Newest project found: $newest_project"

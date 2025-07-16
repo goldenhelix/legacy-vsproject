@@ -1,4 +1,4 @@
-name: Add Samples to VarSeq Legacy Cohort Project
+name: 2. Add Samples to VarSeq Legacy Cohort Project
 description: |-
   # Add sample to a legacy VSW1 cohort VarSeq project
   
@@ -9,7 +9,7 @@ description: |-
 stages:
   - name: update_project
     description: Update the legacy cohort project with new samples
-    task_path: update_project.task.yaml
+    task_path: subtasks/update_project.task.yaml
     parameter_file:
       path: 
         base_path: 
