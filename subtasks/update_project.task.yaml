@@ -65,11 +65,17 @@ steps:
                             dir_name=$(basename "$dir")
                             if [[ "$dir_name" == *-* ]]; then
                                 number_part=${dir_name##*-}
-                                # Pad with zeros for lexicographic sorting (assumes max 4 digits)
-                                printf "%04d %s\n" "$number_part" "$dir"
+                                # Validate that the extracted part is numeric
+                                if [[ "$number_part" =~ ^[0-9]+$ ]]; then
+                                    # Pad with zeros for lexicographic sorting (assumes max 6 digits)
+                                    printf "%06d %s\n" "$number_part" "$dir"
+                                else
+                                    # If not numeric, use 0 as the number
+                                    printf "%06d %s\n" "0" "$dir"
+                                fi
                             else
                                 # If no '-' found, use 0 as the number
-                                printf "%04d %s\n" "0" "$dir"
+                                printf "%06d %s\n" "0" "$dir"
                             fi
                         done | \
                         sort -nr | \
@@ -80,8 +86,21 @@ steps:
         if [[ -z "$newest_project" ]]; then
             echo "No existing projects found!"
         else
-            project_count=$(echo "$newest_project" | rev | cut -d'-' -f1 | rev)
-            project_count=$((project_count + 1))
+            # Extract number after the last '-' using bash parameter expansion
+            dir_name=$(basename "$newest_project")
+            if [[ "$dir_name" == *-* ]]; then
+                project_count=${dir_name##*-}
+                if [[ ! "$project_count" =~ ^[0-9]+$ ]]; then
+                    echo "Error: Unable to extract valid numeric project count from directory name: $newest_project"
+                    echo "Expected format: project_name-NUMBER, but found: $dir_name"
+                    exit 1
+                fi
+                project_count=$((project_count + 1))
+            else
+                echo "Error: Directory name does not contain '-' separator: $newest_project"
+                echo "Expected format: project_name-NUMBER"
+                exit 1
+            fi
         fi
         
         new_project="${project_base_path}/${project_name}-${project_count}"
