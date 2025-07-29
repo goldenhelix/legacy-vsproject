@@ -5,6 +5,7 @@ This repository contains VarSeq pipeline tasks for managing legacy cohort projec
 ## Prerequisites
 
 - Project template files (.vsproject format)
+  - Default templates are provided: `Legacy_Frequency_Cohort_Template_GRCh37.vsproject-template` and `Legacy_Frequency_Cohort_Template_GRCh38.vsproject-template`
 - Sample vcf files for import
 - Appropriate read/write permissions
 
@@ -49,7 +50,7 @@ Process Overview:
 
 1. Create initial cohort settings:
    - Run the Create Cohort task to set up project parameters
-   - Specify project name, template file, and base path
+   - Specify project name, template file (use provided default templates or your own), and base path
 
 2. Add samples to an existing cohort:
    - Use the "Add Samples to Cohort Variant Frequencies" workflow

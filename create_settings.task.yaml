@@ -20,7 +20,7 @@ parameters:
   - name: project_template
     type: file
     label: The project template for new projects 
-    help: The path to the project template file that will be used for new projects
+    help: The path to the project template file that will be used for new projects. Default templates are available in the repository (Legacy_Frequency_Cohort_Template_GRCh37.vsproject-template and Legacy_Frequency_Cohort_Template_GRCh38.vsproject-template)
 
   - name: project_base_path
     type: directory
